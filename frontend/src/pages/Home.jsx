@@ -1,0 +1,228 @@
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { FaLeaf, FaHandHoldingHeart, FaMapMarkerAlt, FaSearch, FaWhatsapp, FaUsers, FaEnvelope, FaExclamationTriangle } from 'react-icons/fa';
+import heroImage from '../assests/close-up-volunteers-working-together.png';
+import { API_URL, authFetch } from '../api';
+
+export default function Home() {
+  const [donors, setDonors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchDonors();
+  }, []);
+
+  const fetchDonors = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch(`${API_URL}/donors`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Ensure data is an array
+      if (Array.isArray(data)) {
+        setDonors(data);
+      } else {
+        console.warn('Expected array but got:', data);
+        setDonors([]); // Set empty array as fallback
+      }
+      
+    } catch (err) {
+      console.error('Error fetching donors:', err);
+      setError(err.message);
+      // Fallback sample data
+      setDonors([
+        { id: 1, name: "Fresh Foods Market", city: "Johannesburg", email: "fresh@example.com", phone: "+27123456789" },
+        { id: 2, name: "Green Grocers", city: "Cape Town", email: "green@example.com", phone: "+27876543210" },
+        { id: 3, name: "Organic Farms SA", city: "Durban", email: "organic@example.com", phone: "+27111222333" },
+        { id: 4, name: "Bakery Corner", city: "Pretoria", email: "bakery@example.com", phone: "+27444555666" }
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleWhatsAppClick = (phone, name) => {
+    const message = `Hello${name ? ` ${name}` : ''}!%0A%0AI saw your profile on Food Rescue and would like to discuss food donation opportunities.%0A%0ACould you please provide more information?`;
+    const whatsappUrl = `https://wa.me/${phone.replace(/\D/g, '')}?text=${message}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const handleEmailClick = (email, name) => {
+    const subject = `Food Donation Inquiry - ${name}`;
+    const body = `Hello${name ? ` ${name}` : ''}!%0A%0AI saw your profile on Food Rescue and would like to discuss food donation opportunities.%0A%0ACould you please provide more information?`;
+    window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen p-6 sm:p-10" style={{ backgroundColor: '#F9F3EF' }}>
+      
+      {/* Main Hero Section */}
+      <div className="w-full max-w-6xl mb-12 overflow-hidden shadow-2xl hero rounded-2xl" style={{ backgroundColor: '#98A1BC' }}>
+        <div className="hero-content text-center text-[#555879] p-8 sm:p-16 flex flex-col lg:flex-row items-center justify-between">
+          <div className="max-w-xl mb-8 lg:text-left lg:pr-10 lg:mb-0">
+            <h1 className="mb-4 text-5xl font-extrabold leading-tight text-white md:text-6xl">
+              Nourish SA, <br className="hidden sm:inline"/> Eliminate Waste!
+            </h1>
+            <p className="py-6 text-lg text-white md:text-xl opacity-90">
+              Join the Food Rescue initiative in South Africa!🇿🇦 We connect generous donors with local NGOs to ensure no good food goes to waste and everyone has access to healthy meals.
+            </p>
+            <Link 
+              className="btn btn-lg bg-[#555879] text-[#F9F3EF] hover:bg-[#F9F3EF] hover:text-[#555879] border-none font-bold transition-colors duration-300 transform hover:scale-105 shadow-lg" 
+              to="/listings"
+            >
+              <FaSearch className="inline-block mr-2 text-xl" /> Discover Listings
+            </Link>
+          </div>
+          <div className="flex items-center justify-center lg:w-1/2">
+            <img 
+              src={heroImage} 
+              alt="Food Donation" 
+              className="object-cover w-full shadow-xl rounded-xl max-h-80"
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Available Donors Section */}
+      <div className="w-full max-w-6xl mb-12">
+        <h2 className="text-4xl font-bold text-[#555879] mb-8 text-center">Our Generous Donors</h2>
+        
+        {loading ? (
+          <div className="text-center">
+            <div className="loading loading-spinner loading-lg text-[#555879]"></div>
+            <p className="mt-4 text-gray-600">Loading donors...</p>
+          </div>
+        ) : error ? (
+          <div className="p-4 text-center text-orange-600 rounded-lg bg-orange-50">
+            <FaExclamationTriangle className="mx-auto mb-2 text-2xl" />
+            <p>Could not load donors: {error}</p>
+            <p className="mt-2 text-sm">Showing sample data instead</p>
+          </div>
+        ) : null}
+
+        {/* Donors Grid */}
+        {!loading && (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {Array.isArray(donors) && donors.length > 0 ? (
+              donors.map((donor) => (
+                <div key={donor.id} className="p-4 transition-transform duration-300 transform bg-white shadow-lg card rounded-xl hover:scale-105">
+                  <div className="text-center card-body">
+                    <FaUsers className="text-4xl text-[#555879] mx-auto mb-3" />
+                    <h3 className="text-xl font-semibold text-[#555879] mb-2">{donor.name}</h3>
+                    <p className="mb-3 text-gray-600">
+                      <FaMapMarkerAlt className="inline-block mr-2 text-[#98A1BC]" />
+                      {donor.city}
+                    </p>
+                    
+                    {/* Contact Options */}
+                    <div className="flex justify-center gap-2 mt-4">
+                      {donor.email && (
+                        <button
+                          onClick={() => handleEmailClick(donor.email, donor.name)}
+                          className="text-white bg-blue-600 border-none btn btn-sm btn-circle hover:bg-blue-700"
+                          title={`Email ${donor.email}`}
+                        >
+                          <FaEnvelope className="text-sm" />
+                        </button>
+                      )}
+                      {donor.phone && (
+                        <button
+                          onClick={() => handleWhatsAppClick(donor.phone, donor.name)}
+                          className="text-white bg-green-600 border-none btn btn-sm btn-circle hover:bg-green-700"
+                          title="Contact via WhatsApp"
+                        >
+                          <FaWhatsapp className="text-sm" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center text-gray-600 col-span-full">
+                <FaUsers className="mx-auto mb-4 text-6xl text-gray-400" />
+                <p>No donors registered yet. Be the first to sign up!</p>
+                <Link to="/register" className="mt-4 btn btn-primary">
+                  Become a Donor
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ... rest of your home page content ... */}
+         {/* Value Proposition / How It Works Section */}
+      <div className="w-full max-w-6xl mb-12 text-center">
+        <h2 className="text-4xl font-bold text-[#555879] mb-8">How We Make a Difference</h2>
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+          
+          {/* Card 1: Reduce Waste */}
+          <div className="card bg-white shadow-lg rounded-xl p-6 transform hover:scale-105 transition-transform duration-300 border-b-4 border-[#98A1BC]">
+            <div className="p-0 card-body">
+              <FaLeaf className="text-5xl text-[#555879] mx-auto mb-4" />
+              <h3 className="card-title text-2xl font-semibold text-[#555879] mb-3">Reduce Food Waste</h3>
+              <p className="text-gray-600">
+                Prevent edible surplus food from ending up in landfills, positively impacting our environment.
+              </p>
+            </div>
+          </div>
+
+          {/* Card 2: Feed Communities */}
+          <div className="card bg-white shadow-lg rounded-xl p-6 transform hover:scale-105 transition-transform duration-300 border-b-4 border-[#98A1BC]">
+            <div className="p-0 card-body">
+              <FaHandHoldingHeart className="text-5xl text-[#555879] mx-auto mb-4" />
+              <h3 className="card-title text-2xl font-semibold text-[#555879] mb-3">Nourish Our Community</h3>
+              <p className="text-gray-600">
+                Channel nutritious food to those in need, supporting NGOs and vulnerable families in our Communities.
+              </p>
+            </div>
+          </div>
+
+          {/* Card 3: Local Impact */}
+          <div className="card bg-white shadow-lg rounded-xl p-6 transform hover:scale-105 transition-transform duration-300 border-b-4 border-[#98A1BC]">
+            <div className="p-0 card-body">
+              <FaMapMarkerAlt className="text-5xl text-[#555879] mx-auto mb-4" />
+              <h3 className="card-title text-2xl font-semibold text-[#555879] mb-3">Local & Direct</h3>
+              <p className="text-gray-600">
+                Connect directly with local donors and NGOs for efficient, impactful food distribution right here in South Africa.
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+            {/* Call to Action Section */}
+      <div className="w-full max-w-6xl p-10 text-center shadow-xl rounded-2xl" style={{ backgroundColor: '#F9F3EF', border: '2px solid #98A1BC' }}>
+        <h2 className="text-3xl md:text-4xl font-bold text-[#555879] mb-6">Ready to Make a Difference?</h2>
+        <div className="flex flex-col justify-center gap-4 sm:flex-row">
+          <Link 
+            className="btn btn-lg bg-[#555879] text-[#F9F3EF] hover:bg-[#F9F3EF] hover:text-[#555879] border-none font-bold transition-colors duration-300 transform hover:scale-105 shadow-md" 
+            to="/register?role=donor"
+          >
+            I'm a Donor!
+          </Link>
+          <Link 
+            className="btn btn-lg bg-[#98A1BC] text-[#555879] hover:bg-[#555879] hover:text-[#F9F3EF] border-none font-bold transition-colors duration-300 transform hover:scale-105 shadow-md" 
+            to="/register?role=ngo"
+          >
+            I'm an NGO!
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
